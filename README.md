@@ -186,9 +186,6 @@ Organic traffic drives awareness but includes mixed user intent. SEO content may
 - With an AOV of **$104.46**, the business can afford higher acquisition costs for high-intent channels.
 - Marketing spend should be aligned with expected revenue per visitor to maintain profitability.
 
-**Recommended CAC Guidance:**
-To remain profitable, customer acquisition cost (CAC) should stay well below the AOV.  
-A practical target range would be **≤ $25–$35**, depending on channel performance and retention potential.
 ---
 
 ##  Recommendations
