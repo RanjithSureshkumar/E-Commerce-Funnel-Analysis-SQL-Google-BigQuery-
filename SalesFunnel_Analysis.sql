@@ -1,18 +1,19 @@
-SELECT * FROM `ageless-slate-446621-j7.Sales_Funnel.User_Info` LIMIT 1000
+
+SELECT * FROM `Sales_Funnel.User_events` LIMIT 1000
 
 --- Defining Sales funnel and different Stages of Funnel 
 
 WITH Funnel_Stages AS
- (
+(
    SELECT 
-   COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN user_id END) as stage_1_views, 
-   COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN user_id END) as stage_2_views, 
-   COUNT(DISTINCT CASE WHEN event_type = 'checkout_start' THEN user_id END) as stage_3_views, 
-   COUNT(DISTINCT CASE WHEN event_type = 'payment_info' THEN user_id END) as stage_4_views, 
-   COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN user_id END) as stage_5_views 
-   from  ageless-slate-446621-j7.Sales_Funnel.User_Info
+     COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN user_id END) as stage_1_views, 
+     COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN user_id END) as stage_2_cart, 
+     COUNT(DISTINCT CASE WHEN event_type = 'checkout_start' THEN user_id END) as stage_3_checkout, 
+     COUNT(DISTINCT CASE WHEN event_type = 'payment_info' THEN user_id END) as stage_4_payment, 
+     COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN user_id END) as stage_5_purchase
+   from  Sales_Funnel.User_events
    WHERE event_date >= TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 50 DAY)) 
-   )
+)
  SELECT * FROM Funnel_stages;
 
 
@@ -21,26 +22,25 @@ WITH Funnel_Stages AS
 WITH Funnel_Stages AS
  (
    SELECT 
-   COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN user_id END) as stage_1_views, 
-   COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN user_id END) as stage_2_views, 
-   COUNT(DISTINCT CASE WHEN event_type = 'checkout_start' THEN user_id END) as stage_3_views, 
-   COUNT(DISTINCT CASE WHEN event_type = 'payment_info' THEN user_id END) as stage_4_views, 
-   COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN user_id END) as stage_5_views 
-   from  ageless-slate-446621-j7.Sales_Funnel.User_Info
+     COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN user_id END) as stage_1_views, 
+     COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN user_id END) as stage_2_cart, 
+     COUNT(DISTINCT CASE WHEN event_type = 'checkout_start' THEN user_id END) as stage_3_checkout, 
+     COUNT(DISTINCT CASE WHEN event_type = 'payment_info' THEN user_id END) as stage_4_payment, 
+     COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN user_id END) as stage_5_purchase
+   from  Sales_Funnel.User_events
    WHERE event_date >= TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 50 DAY)) 
-   )
+ )
  SELECT 
- stage_1_views,
-
- stage_2_views,
- round((stage_2_views * 100 / stage_1_views),2) as View_to_cart,
- stage_3_views,
- round((stage_3_views * 100 / stage_2_views),2) as Cart_to_checkout,
- stage_4_views,
- round((stage_4_views * 100 / stage_3_views),2) as Checkout_to_payment,
- stage_5_views,
- round((stage_5_views * 100 / stage_4_views),2) as Payment_to_purchase,
- round((stage_5_views * 100 / stage_1_views),2) as overall_conversion
+   stage_1_views,
+   stage_2_cart,
+   round((stage_2_cart * 100 / stage_1_views),2) as View_to_cart,
+   stage_3_checkout,
+   round((stage_3_checkout* 100 / stage_2_cart),2) as Cart_to_checkout,
+   stage_4_payment,
+   round((stage_4_payment * 100 / stage_3_checkout),2) as Checkout_to_payment,
+   stage_5_purchase,
+   round((stage_5_purchase * 100 / stage_4_payment),2) as Payment_to_purchase,
+   round((stage_5_purchase * 100 / stage_1_views),2) as overall_conversion
 
  FROM Funnel_stages;
 
@@ -53,25 +53,17 @@ traffic_source,
    COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN user_id END) as views, 
    COUNT(DISTINCT CASE WHEN event_type = 'add_to_cart' THEN user_id END) as cart, 
    COUNT(DISTINCT CASE WHEN event_type = 'purchase' THEN user_id END) as purchase 
-   from  ageless-slate-446621-j7.Sales_Funnel.User_Info
-group by traffic_source
-
+   from Sales_Funnel.User_events
+ group by traffic_source
 )
-
 select
-traffic_source,
-
-views,
-
-cart,
-round((cart * 100 / views),2) as views_to_cart,
-
-purchase,
-
-round((purchase * 100 / cart),2) as cart_to_purchase,
-
-round((purchase * 100 / views),2) as views_to_purchase
-
+  traffic_source,
+  views,
+  cart,
+  round((cart * 100 / views),2) as views_to_cart,
+  purchase,
+  round((purchase * 100 / cart),2) as cart_to_purchase,
+  round((purchase * 100 / views),2) as views_to_purchase
 from source_funnel
 
 
@@ -84,7 +76,7 @@ user_id,
    min(CASE WHEN event_type = 'page_view' THEN event_date END) as view_time, 
    min(CASE WHEN event_type = 'add_to_cart' THEN event_date END) as cart_time, 
    min(CASE WHEN event_type = 'purchase' THEN event_date END) as purchase_time 
-   from  ageless-slate-446621-j7.Sales_Funnel.User_Info
+   from  Sales_Funnel.User_events
 
 WHERE event_date >= TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 50 DAY)) 
 GROUP BY user_id
@@ -104,21 +96,21 @@ FROM user_journy
 
 WITH revenue_funnel AS (
 SELECT 
-count(distinct case when event_type = 'page_view' then user_id end) as total_visitors,
-count(distinct case when event_type = 'purchase' then user_id end) as total_buyers,
-sum(distinct case when event_type = 'purchase' then amount end) as total_revenue,
-count (case when event_type = 'purchase' then 1 end) as total_orders
- from  ageless-slate-446621-j7.Sales_Funnel.User_Info
+  count(distinct case when event_type = 'page_view' then user_id end) as total_visitors,
+  count(distinct case when event_type = 'purchase' then user_id end) as total_buyers,
+  round(sum(distinct case when event_type = 'purchase' then amount end),2) as total_revenue,
+  count (case when event_type = 'purchase' then 1 end) as total_orders
+ from  Sales_Funnel.User_events
 WHERE event_date >= TIMESTAMP(DATE_SUB(CURRENT_DATE(), INTERVAL 50 DAY)) 
 
 HAVING MIN(CASE WHEN event_type = 'purchase' THEN event_date END) IS NOT NULL
 )
 
 select 
-total_visitors,
-total_buyers,
-total_revenue,
-total_orders,
-round(total_revenue/total_visitors,2) as avg_revenue_per_visitor,
-round(total_revenue/total_orders,2) as avg_order_value
+  total_visitors,
+  total_buyers,
+  total_revenue,
+  total_orders,
+  round(total_revenue/total_visitors,2) as avg_revenue_per_visitor,
+  round(total_revenue/total_orders,2) as avg_order_value
 from revenue_funnel
